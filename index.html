@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pallet Tracker</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg-base:    #0f1117;
+            --bg-card:    #1a1d27;
+            --bg-input:   #22263a;
+            --bg-row:     #1e2133;
+            --bg-row-alt: #1a1d2b;
+            --border:     rgba(255,255,255,0.08);
+            --border-med: rgba(255,255,255,0.14);
+            --text-1:     #f0f2ff;
+            --text-2:     #9ba3c4;
+            --text-3:     #5c6382;
+            --accent:     #6c8cff;
+            --accent-dim: rgba(108,140,255,0.12);
+            --green:      #3ecf8e;
+            --green-dim:  rgba(62,207,142,0.12);
+            --red:        #ff6b6b;
+            --red-dim:    rgba(255,107,107,0.12);
+            --amber:      #f5a623;
+            --amber-dim:  rgba(245,166,35,0.12);
+            --blue:       #5bc4f5;
+            --blue-dim:   rgba(91,196,245,0.12);
+            --radius-sm:  6px;
+            --radius-md:  10px;
+            --radius-lg:  14px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg-base);
+            color: var(--text-1);
+            min-height: 100vh;
+            padding: 16px;
+        }
+
+        /* ── HEADER ── */
+        .app-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+        .app-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .app-title .icon-wrap {
+            width: 36px; height: 36px;
+            background: var(--accent-dim);
+            border: 1px solid rgba(108,140,255,0.3);
+            border-radius: var(--radius-md);
+            display: flex; align-items: center; justify-content: center;
+        }
+        .app-title .icon-wrap svg { width: 18px; height: 18px; stroke: var(--accent); }
+        .app-title h1 { font-size: 18px; font-weight: 600; letter-spacing: 0.02em; color: var(--text-1); }
+        .app-title span { font-size: 11px; color: var(--text-3); letter-spacing: 0.08em; text-transform: uppercase; display: block; }
+
+        .btn-blank {
+            display: flex; align-items: center; gap: 6px;
+            padding: 8px 14px;
+            background: transparent;
+            border: 1px solid var(--border-med);
+            border-radius: var(--radius-md);
+            color: var(--text-2);
+            font-size: 13px;
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s;
+            white-space: nowrap;
+        }
+        .btn-blank:hover { background: var(--bg-input); color: var(--text-1); }
+        .btn-blank svg { width: 15px; height: 15px; stroke: currentColor; }
+
+        /* ── CARD ── */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+        .card-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-2);
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .card-title::before {
+            content: '';
+            display: inline-block;
+            width: 3px; height: 14px;
+            background: var(--accent);
+            border-radius: 2px;
+        }
+
+        /* ── FORM GRID ── */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        @media (max-width: 480px) { .form-grid { grid-template-columns: 1fr; } }
+
+        .field label {
+            display: block;
+            font-size: 12px;
+            color: var(--text-3);
+            margin-bottom: 6px;
+            letter-spacing: 0.04em;
+        }
+        .field input[type="text"],
+        .field input[type="number"] {
+            width: 100%;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text-1);
+            font-size: 14px;
+            padding: 9px 12px;
+            outline: none;
+            transition: border-color 0.15s;
+            -moz-appearance: textfield;
+        }
+        .field input::-webkit-outer-spin-button,
+        .field input::-webkit-inner-spin-button { -webkit-appearance: none; }
+        .field input:focus { border-color: var(--accent); }
+        .field input::placeholder { color: var(--text-3); }
+
+        /* ── PALLET TABLE ── */
+        .pallet-table-wrap {
+            overflow-x: auto;
+            margin-top: 8px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border);
+        }
+        .pallet-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            min-width: 320px;
+        }
+        .pallet-table thead th {
+            background: var(--bg-input);
+            color: var(--text-3);
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            padding: 10px 14px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        .pallet-table thead th:not(:first-child) { text-align: right; }
+        .pallet-table tbody tr { border-bottom: 1px solid var(--border); }
+        .pallet-table tbody tr:last-child { border-bottom: none; }
+        .pallet-table tbody tr:nth-child(odd) { background: var(--bg-row); }
+        .pallet-table tbody tr:nth-child(even) { background: var(--bg-row-alt); }
+        .pallet-table td {
+            padding: 8px 14px;
+            color: var(--text-2);
+        }
+        .pallet-table td:first-child { color: var(--text-1); font-weight: 500; }
+        .pallet-table td:not(:first-child) { text-align: right; }
+
+        .tbl-input {
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text-1);
+            font-size: 13px;
+            padding: 6px 10px;
+            text-align: right;
+            width: 100%;
+            min-width: 80px;
+            outline: none;
+            -moz-appearance: textfield;
+        }
+        .tbl-input::-webkit-outer-spin-button,
+        .tbl-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+        .tbl-input:focus { border-color: var(--accent); }
+
+        /* ── SUMMARY ROWS ── */
+        .summary-section { margin-top: 16px; }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 10px;
+        }
+        .summary-card {
+            border-radius: var(--radius-md);
+            padding: 12px 14px;
+            border: 1px solid;
+        }
+        .summary-card .s-label {
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.07em;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+        .summary-card .s-value {
+            font-size: 18px;
+            font-weight: 600;
+        }
+        .summary-card .s-input {
+            background: transparent;
+            border: none;
+            outline: none;
+            font-size: 18px;
+            font-weight: 600;
+            width: 100%;
+            -moz-appearance: textfield;
+        }
+        .summary-card .s-input::-webkit-outer-spin-button,
+        .summary-card .s-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+        .sc-gross  { background: rgba(255,107,107,0.08); border-color: rgba(255,107,107,0.25); }
+        .sc-gross  .s-label { color: var(--red); }
+        .sc-gross  .s-value { color: var(--red); }
+
+        .sc-pallet { background: rgba(91,196,245,0.08); border-color: rgba(91,196,245,0.25); }
+        .sc-pallet .s-label { color: var(--blue); }
+        .sc-pallet .s-input { color: var(--blue); }
+
+        .sc-rate   { background: rgba(108,140,255,0.08); border-color: rgba(108,140,255,0.25); }
+        .sc-rate   .s-label { color: var(--accent); }
+        .sc-rate   .s-input { color: var(--accent); }
+
+        .sc-plastic { background: rgba(245,166,35,0.08); border-color: rgba(245,166,35,0.25); }
+        .sc-plastic .s-label { color: var(--amber); }
+        .sc-plastic .s-value { color: var(--amber); }
+
+        .sc-net    { background: rgba(62,207,142,0.10); border-color: rgba(62,207,142,0.30); }
+        .sc-net    .s-label { color: var(--green); }
+        .sc-net    .s-value { color: var(--green); }
+
+        /* ── TIMESTAMP ── */
+        .timestamp { font-size: 11px; color: var(--text-3); text-align: right; margin-top: 10px; }
+
+        /* ── ACTION BUTTONS ── */
+        .actions-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 16px;
+        }
+        .btn {
+            flex: 1;
+            min-width: 120px;
+            padding: 11px 18px;
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: opacity 0.15s, transform 0.1s;
+            letter-spacing: 0.02em;
+        }
+        .btn:active { transform: scale(0.97); }
+        .btn-save   { background: var(--accent); color: #fff; }
+        .btn-update { background: var(--amber); color: #0f1117; }
+        .btn-cancel { background: var(--bg-input); color: var(--text-2); border: 1px solid var(--border-med); }
+        .btn:hover { opacity: 0.88; }
+
+        /* ── SAVED ENTRIES ── */
+        .entries-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+        .entries-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+        .btn-sm {
+            display: flex; align-items: center; gap: 5px;
+            padding: 7px 12px;
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: opacity 0.15s;
+            letter-spacing: 0.02em;
+        }
+        .btn-sm svg { width: 13px; height: 13px; stroke: currentColor; }
+        .btn-sm:active { opacity: 0.7; }
+        .btn-delete { background: var(--red-dim); color: var(--red); border-color: rgba(255,107,107,0.25); }
+        .btn-print  { background: var(--green-dim); color: var(--green); border-color: rgba(62,207,142,0.25); }
+
+        .entries-table-wrap {
+            overflow-x: auto;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border);
+        }
+        .entries-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            min-width: 480px;
+        }
+        .entries-table thead th {
+            background: var(--bg-input);
+            color: var(--text-3);
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            padding: 10px 14px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        .entries-table tbody tr {
+            border-bottom: 1px solid var(--border);
+            transition: background 0.1s;
+        }
+        .entries-table tbody tr:last-child { border-bottom: none; }
+        .entries-table tbody tr:hover { background: var(--bg-row); }
+        .entries-table td { padding: 10px 14px; color: var(--text-2); vertical-align: middle; }
+        .entries-table td.item-code { color: var(--text-1); font-weight: 600; }
+        .entries-table td.net-wt { color: var(--green); font-weight: 600; }
+
+        .btn-edit-sm {
+            padding: 5px 10px;
+            background: var(--amber-dim);
+            color: var(--amber);
+            border: 1px solid rgba(245,166,35,0.25);
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.15s;
+        }
+        .btn-edit-sm:hover { opacity: 0.8; }
+
+        input[type="checkbox"] {
+            width: 15px; height: 15px;
+            accent-color: var(--accent);
+            cursor: pointer;
+        }
+
+        /* ── EMPTY STATE ── */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-3);
+            font-size: 13px;
+        }
+        .empty-state svg { width: 36px; height: 36px; stroke: var(--text-3); opacity: 0.4; margin-bottom: 10px; }
+
+        /* ── PRINT ── */
+        .print-only { display: none; }
+
+        @media print {
+            @page { size: letter portrait; margin: 0.25in; }
+            @page landscape { size: letter landscape; margin: 0.2in; }
+            body * { visibility: hidden; }
+            .print-only, .print-only * { visibility: visible; color: black !important; background-color: white !important; }
+            .print-only {
+                display: flex; flex-wrap: wrap;
+                justify-content: flex-start; align-items: flex-start;
+                gap: 0; position: absolute; left: 50%; top: 0;
+                width: 8in; transform: translateX(-50%);
+                box-sizing: border-box;
+            }
+            .print-cut-cell {
+                box-sizing: border-box; width: 2.5in; padding: 0.04in;
+                border: 1.5px dashed #aaa; position: relative;
+                margin: 0.08in;
+            }
+            .print-row-cut {
+                width: 7.8in; height: 0;
+                border-top: 2px dashed #888; margin: 3px 0; flex-basis: 100%;
+            }
+            .print-only.landscape-mode {
+                width: 10in;
+                justify-content: space-between;
+            }
+            .print-only.landscape-mode .print-cut-cell { width: 2.3in; margin: 0.06in 0; }
+            .print-only.landscape-mode .print-row-cut { width: 10in; }
+
+            .print-slip {
+                border: 2px solid #222; padding: 0; page-break-inside: avoid;
+                width: 100%; box-sizing: border-box;
+                font-family: Arial, sans-serif; font-size: 9pt;
+            }
+            .print-slip .slip-header { width: 100%; border-collapse: collapse; margin: 0; }
+            .print-slip .slip-header td {
+                border: 1px solid black; padding: 2px 4px;
+                font-size: 9pt; font-weight: bold; height: 14px; white-space: nowrap;
+            }
+            .print-slip .slip-header .label-cell { width: 55%; white-space: nowrap; }
+            .print-slip .slip-header .value-cell { width: 45%; }
+            .print-slip .slip-table { width: 100%; border-collapse: collapse; margin: 0; border-top: none; }
+            .print-slip .slip-table th, .print-slip .slip-table td {
+                border: 1px solid black; padding: 2px 3px; text-align: center;
+                font-size: 8pt; height: 15px; white-space: nowrap;
+                -webkit-print-color-adjust: exact; print-color-adjust: exact;
+            }
+            .print-slip .slip-table th { background-color: #fff !important; font-weight: bold; }
+            .print-slip .slip-table .col-pallet { text-align: left; width: 30%; }
+            .print-slip .slip-table .col-weight { width: 38%; text-align: right !important; }
+            .print-slip .slip-table .col-qty { width: 32%; text-align: right !important; }
+            .print-slip .unit-suffix { font-size: 8pt; color: #444 !important; }
+            .print-slip .row-gross td { background-color: #bfbfbf !important; color: black !important; font-weight: bold; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .print-slip .row-pallet td { background-color: #9dc3e6 !important; color: black !important; font-weight: bold; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .print-slip .row-empty td { background-color: #ffeb9c !important; color: black !important; font-weight: bold; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .print-slip .row-net td { background-color: #a9d18e !important; color: black !important; font-weight: bold; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .print-slip .summary-label { text-align: left !important; font-size: 8.5pt; white-space: nowrap; }
+            .print-slip .summary-value { text-align: center !important; }
+
+            .print-blank-slip {
+                border: 1.5px solid #222; padding: 0; page-break-inside: avoid;
+                width: 100%; box-sizing: border-box;
+                font-family: Arial, sans-serif; font-size: 8pt;
+            }
+            .print-blank-slip table { margin: 0; padding: 0; }
+            .print-blank-slip .slip-header { width: 100%; border-collapse: collapse; margin: 0; }
+            .print-blank-slip .slip-header td { border: 1px solid black; padding: 2px 3px; font-size: 8pt; font-weight: bold; height: 13px; }
+            .print-blank-slip .slip-header .label-cell { width: 55%; white-space: nowrap; }
+            .print-blank-slip .slip-header .value-cell { width: 45%; }
+            .print-blank-slip .slip-table { width: 100%; border-collapse: collapse; margin: 0; border-top: none; }
+            .print-blank-slip .slip-table th, .print-blank-slip .slip-table td {
+                border: 1px solid black; padding: 1px 2px; text-align: center;
+                font-size: 8pt; height: 13px;
+                -webkit-print-color-adjust: exact; print-color-adjust: exact;
+            }
+            .print-blank-slip .slip-table th { background-color: #fff !important; font-weight: bold; }
+            .print-blank-slip .slip-table .col-pallet { text-align: left; width: 38%; }
+            .print-blank-slip .slip-table .col-weight { width: 32%; text-align: right !important; }
+            .print-blank-slip .slip-table .col-qty { width: 30%; text-align: right !important; }
+            .print-blank-slip .unit-suffix { font-size: 7pt; color: #444 !important; }
+            .print-blank-slip .row-gross td { background-color: #bfbfbf !important; color: black !important; font-weight: bold; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .print-blank-slip .row-pallet td { background-color: #9dc3e6 !important; color: black !important; font-weight: bold; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .print-blank-slip .row-empty td { background-color: #ffeb9c !important; color: black !important; font-weight: bold; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .print-blank-slip .row-net td { background-color: #a9d18e !important; color: black !important; font-weight: bold; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .print-blank-slip .summary-label { text-align: left !important; font-size: 7.5pt; white-space: nowrap; }
+            .print-blank-slip .summary-value { text-align: center !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ── LOGIN OVERLAY ── -->
+    <div id="loginOverlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:999; align-items:center; justify-content:center;">
+        <div style="background:var(--bg-card); border:1px solid var(--border-med); border-radius:var(--radius-lg); padding:32px; width:100%; max-width:360px; margin:16px;">
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:24px;">
+                <div style="width:36px;height:36px;background:var(--accent-dim);border:1px solid rgba(108,140,255,0.3);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                </div>
+                <div>
+                    <div style="font-size:16px;font-weight:600;color:var(--text-1);">Pallet Tracker</div>
+                    <div style="font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:0.08em;">Sign in to continue</div>
+                </div>
+            </div>
+            <div style="margin-bottom:14px;">
+                <label style="display:block;font-size:12px;color:var(--text-3);margin-bottom:6px;">Username</label>
+                <input type="text" id="loginUsername" placeholder="Enter username" style="width:100%;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-1);font-size:14px;padding:10px 12px;outline:none;">
+            </div>
+            <div style="margin-bottom:20px;">
+                <label style="display:block;font-size:12px;color:var(--text-3);margin-bottom:6px;">Password</label>
+                <input type="password" id="loginPassword" placeholder="Enter password" style="width:100%;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-1);font-size:14px;padding:10px 12px;outline:none;">
+            </div>
+            <div id="loginError" style="font-size:12px;color:var(--red);margin-bottom:12px;min-height:16px;"></div>
+            <button id="loginBtn" style="width:100%;padding:11px;background:var(--accent);color:#fff;border:none;border-radius:var(--radius-md);font-size:14px;font-weight:600;cursor:pointer;">Login</button>
+        </div>
+    </div>
+
+    <!-- ── APP CONTENT ── -->
+    <div id="appContent" style="display:none;">
+
+    <!-- ── APP HEADER ── -->
+    <header class="app-header">
+        <div class="app-title">
+            <div class="icon-wrap">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="7" width="20" height="14" rx="2"/>
+                    <path d="M16 7V5a2 2 0 0 0-4 0v2M8 7V5a2 2 0 0 0-4 0v2"/>
+                    <line x1="2" y1="12" x2="22" y2="12"/>
+                </svg>
+            </div>
+            <div>
+                <h1>Pallet Tracker</h1>
+                <span id="currentUser" style="font-size:11px;color:var(--text-3);letter-spacing:0.08em;text-transform:uppercase;"></span>
+            </div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+            <button class="btn-blank" id="printBlankBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 6 2 18 2 18 9"/>
+                    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                    <rect x="6" y="14" width="12" height="8"/>
+                </svg>
+                Print Blank
+            </button>
+            <button id="logoutBtn" style="display:flex;align-items:center;gap:6px;padding:8px 14px;background:transparent;border:1px solid var(--border-med);border-radius:var(--radius-md);color:var(--text-2);font-size:13px;cursor:pointer;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                Logout
+            </button>
+        </div>
+    </header>
+
+    <!-- ── ENTRY FORM ── -->
+    <div class="card">
+        <div class="card-title">New Entry</div>
+        <div class="form-grid">
+            <div class="field">
+                <label>Item Code</label>
+                <input type="text" id="itemCode" placeholder="e.g. ITEM-001">
+            </div>
+            <div class="field">
+                <label>No. of Pallets</label>
+                <input type="number" id="numPallets" min="0" value="0" placeholder="0">
+            </div>
+        </div>
+        <div id="tableContainer"></div>
+        <div id="summarySection" class="summary-section" style="display:none;">
+            <div class="summary-grid">
+                <div class="summary-card sc-gross">
+                    <div class="s-label">Gross WT</div>
+                    <div class="s-value" id="grossWt">0.00 KG</div>
+                </div>
+                <div class="summary-card sc-pallet">
+                    <div class="s-label">Pallet WT</div>
+                    <input type="number" id="palletWt" class="s-input" step="0.01" placeholder="0.00">
+                </div>
+                <div class="summary-card sc-rate">
+                    <div class="s-label">Plastic Rate</div>
+                    <input type="number" id="plasticRate" class="s-input" step="0.001" placeholder="0.000">
+                </div>
+                <div class="summary-card sc-plastic">
+                    <div class="s-label">Empty Plastic</div>
+                    <div class="s-value" id="emptyPlastic">0.00 KG</div>
+                </div>
+                <div class="summary-card sc-net" style="grid-column: 1 / -1;">
+                    <div class="s-label">Net WT</div>
+                    <div class="s-value" id="netWt" style="font-size:22px;">0.00 KG</div>
+                </div>
+            </div>
+            <div class="timestamp" id="timestamp"></div>
+        </div>
+        <div id="actions" class="actions-row" style="display:none;">
+            <button class="btn btn-save" id="saveBtn">Save Entry</button>
+            <button class="btn btn-update" id="updateBtn" style="display:none;">Update Entry</button>
+            <button class="btn btn-cancel" id="cancelEditBtn" style="display:none;">Cancel</button>
+        </div>
+    </div>
+
+    <!-- ── SAVED ENTRIES ── -->
+    <div class="card">
+        <div class="entries-header">
+            <div class="card-title" style="margin-bottom:0;">Saved Entries</div>
+            <div class="entries-actions">
+                <button class="btn-sm btn-delete" id="deleteSelectedBtn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                        <path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/>
+                    </svg>
+                    Delete
+                </button>
+                <button class="btn-sm btn-print" id="printSelectedBtn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="6 9 6 2 18 2 18 9"/>
+                        <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                        <rect x="6" y="14" width="12" height="8"/>
+                    </svg>
+                    Print Selected
+                </button>
+            </div>
+        </div>
+        <div class="entries-table-wrap">
+            <table class="entries-table" id="savedEntriesTable">
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="selectAll"></th>
+                        <th>Timestamp</th>
+                        <th>Item Code</th>
+                        <th>Pallets</th>
+                        <th>Net WT</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="savedEntriesBody"></tbody>
+            </table>
+        </div>
+        <div id="emptyState" class="empty-state" style="display:none;">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="7" width="20" height="14" rx="2"/>
+                <path d="M16 7V5a2 2 0 0 0-4 0v2M8 7V5a2 2 0 0 0-4 0v2"/>
+            </svg>
+            <p>No entries yet. Add your first pallet entry above.</p>
+        </div>
+    </div>
+
+    </div> <!-- end appContent -->
+
+    <div id="printArea" class="print-only"></div>
+
+    <script>
+        const API = 'https://pallet-tracker.xdeviljinx6.workers.dev';
+        let authToken = sessionStorage.getItem('authToken') || null;
+        let currentUser = sessionStorage.getItem('currentUser') || null;
+        let savedEntries = [];
+        let editingId = null;
+
+        function showLogin() {
+            document.getElementById('loginOverlay').style.display = 'flex';
+            document.getElementById('appContent').style.display = 'none';
+        }
+        function showApp() {
+            document.getElementById('loginOverlay').style.display = 'none';
+            document.getElementById('appContent').style.display = 'block';
+            document.getElementById('currentUser').textContent = currentUser;
+        }
+
+        document.getElementById('loginBtn').addEventListener('click', async () => {
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+            const errEl = document.getElementById('loginError');
+            errEl.textContent = '';
+            if (!username || !password) { errEl.textContent = 'Enter username and password.'; return; }
+            const btn = document.getElementById('loginBtn');
+            btn.textContent = 'Logging in...';
+            try {
+                const res = await fetch(`${API}/api/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                const data = await res.json();
+                if (!res.ok) { errEl.textContent = 'Invalid username or password.'; btn.textContent = 'Login'; return; }
+                authToken = data.token;
+                currentUser = data.username;
+                sessionStorage.setItem('authToken', authToken);
+                sessionStorage.setItem('currentUser', currentUser);
+                showApp();
+                loadEntries();
+            } catch { errEl.textContent = 'Connection error. Try again.'; }
+            btn.textContent = 'Login';
+        });
+
+        document.getElementById('loginPassword').addEventListener('keydown', e => {
+            if (e.key === 'Enter') document.getElementById('loginBtn').click();
+        });
+
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            authToken = null; currentUser = null;
+            sessionStorage.clear();
+            showLogin();
+        });
+
+        function apiHeaders() {
+            return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` };
+        }
+
+        if (authToken) { showApp(); loadEntries(); } else { showLogin(); }
+
+        const numPalletsInput   = document.getElementById('numPallets');
+        const itemCodeInput     = document.getElementById('itemCode');
+        const tableContainer    = document.getElementById('tableContainer');
+        const actionsDiv        = document.getElementById('actions');
+        const summarySection    = document.getElementById('summarySection');
+        const saveBtn           = document.getElementById('saveBtn');
+        const updateBtn         = document.getElementById('updateBtn');
+        const cancelEditBtn     = document.getElementById('cancelEditBtn');
+        const savedEntriesBody  = document.getElementById('savedEntriesBody');
+        const selectAllCheckbox = document.getElementById('selectAll');
+        const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
+        const printSelectedBtn  = document.getElementById('printSelectedBtn');
+        const printBlankBtn     = document.getElementById('printBlankBtn');
+        const printArea         = document.getElementById('printArea');
+        const emptyState        = document.getElementById('emptyState');
+
+        numPalletsInput.addEventListener('input', generateTable);
+        saveBtn.addEventListener('click', saveEntry);
+        updateBtn.addEventListener('click', updateEntry);
+        cancelEditBtn.addEventListener('click', cancelEdit);
+        deleteSelectedBtn.addEventListener('click', deleteSelected);
+        printSelectedBtn.addEventListener('click', printSelected);
+        printBlankBtn.addEventListener('click', printBlankForms);
+        selectAllCheckbox.addEventListener('change', () => {
+            document.querySelectorAll('.entry-checkbox').forEach(cb => cb.checked = selectAllCheckbox.checked);
+        });
+
+        function generateTable() {
+            const numPallets = parseInt(numPalletsInput.value) || 0;
+            if (numPallets <= 0) {
+                tableContainer.innerHTML = '';
+                actionsDiv.style.display = 'none';
+                summarySection.style.display = 'none';
+                return;
+            }
+            actionsDiv.style.display = 'flex';
+            summarySection.style.display = 'block';
+            if (editingId === null) {
+                saveBtn.style.display = ''; updateBtn.style.display = 'none'; cancelEditBtn.style.display = 'none';
+            } else {
+                saveBtn.style.display = 'none'; updateBtn.style.display = ''; cancelEditBtn.style.display = '';
+            }
+            let rows = '';
+            for (let i = 1; i <= numPallets; i++) {
+                // CHANGED: removed value="0" — now blank by default, using placeholder instead
+                rows += `<tr><td>Pallet ${i}</td><td><input type="number" class="tbl-input weight-input" step="0.01" placeholder="0.00"></td><td><input type="number" class="tbl-input bundles-input" step="1" placeholder="0"></td></tr>`;
+            }
+            tableContainer.innerHTML = `<div class="pallet-table-wrap" style="margin-top:16px;"><table class="pallet-table"><thead><tr><th>Pallet #</th><th>Weight (KG)</th><th>Bundles (BDLS)</th></tr></thead><tbody id="palletRows">${rows}</tbody></table></div>`;
+            addEventListeners();
+            calculate();
+        }
+
+        function addEventListeners() {
+            const allWeights = document.querySelectorAll(".weight-input");
+            const allBundles = document.querySelectorAll(".bundles-input");
+
+            document.querySelectorAll(".weight-input, .bundles-input").forEach(input => input.addEventListener("input", calculate));
+            document.getElementById("palletWt").addEventListener("input", calculate);
+            document.getElementById("plasticRate").addEventListener("input", calculate);
+
+            // Auto-fill BDLS: when Pallet 1 BDLS changes, apply same value to all except last pallet
+            if (allBundles.length > 1) {
+                allBundles[0].addEventListener("input", function () {
+                    const val = this.value;
+                    for (let i = 1; i < allBundles.length - 1; i++) {
+                        allBundles[i].value = val;
+                    }
+                    calculate();
+                });
+            }
+
+            // Disable Tab default on all pallet/summary inputs — Tab behaves like Enter
+            document.querySelectorAll(".weight-input, .bundles-input, .s-input").forEach(input => {
+                input.addEventListener("keydown", function (e) {
+                    if (e.key === "Tab") {
+                        e.preventDefault();
+                        // Dispatch Enter on same element to reuse Enter logic
+                        this.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+                    }
+                });
+            });
+
+            // Enter key navigation on weight inputs
+            allWeights.forEach((weightInput, i) => {
+                weightInput.addEventListener("keydown", function (e) {
+                    if (e.key !== "Enter") return;
+                    e.preventDefault();
+                    const bdls = allBundles[i];
+                    if (!bdls) return;
+                    if (!bdls.value) {
+                        // No BDLS value yet — focus BDLS of same pallet
+                        bdls.focus();
+                    } else {
+                        // Has BDLS value — move to weight of next pallet
+                        const nextWeight = allWeights[i + 1];
+                        if (nextWeight) nextWeight.focus();
+                    }
+                });
+            });
+
+            // Enter key navigation on BDLS inputs
+            allBundles.forEach((bdlsInput, i) => {
+                bdlsInput.addEventListener("keydown", function (e) {
+                    if (e.key !== "Enter") return;
+                    e.preventDefault();
+                    const isLast = i === allBundles.length - 1;
+                    if (!isLast) {
+                        // Not last pallet — move to weight of next pallet
+                        const nextWeight = allWeights[i + 1];
+                        if (nextWeight) nextWeight.focus();
+                    } else {
+                        // Last BDLS — check pallet wt and plastic rate
+                        const palletWtEl = document.getElementById("palletWt");
+                        const plasticRateEl = document.getElementById("plasticRate");
+                        const hasPalletWt = palletWtEl.value && parseFloat(palletWtEl.value) !== 0;
+                        const hasPlasticRate = plasticRateEl.value && parseFloat(plasticRateEl.value) !== 0;
+                        if (!hasPalletWt) {
+                            palletWtEl.focus();
+                        } else if (!hasPlasticRate) {
+                            plasticRateEl.focus();
+                        } else {
+                            // Both have values — save or update
+                            triggerSaveOrUpdate();
+                        }
+                    }
+                });
+            });
+
+            // Enter key on pallet wt — if has value, move to plastic rate or save
+            document.getElementById("palletWt").addEventListener("keydown", function (e) {
+                if (e.key !== "Enter") return;
+                e.preventDefault();
+                const plasticRateEl = document.getElementById("plasticRate");
+                const hasPlasticRate = plasticRateEl.value && parseFloat(plasticRateEl.value) !== 0;
+                if (!hasPlasticRate) {
+                    plasticRateEl.focus();
+                } else {
+                    triggerSaveOrUpdate();
+                }
+            });
+
+            // Enter key on plastic rate — save or update
+            document.getElementById("plasticRate").addEventListener("keydown", function (e) {
+                if (e.key !== "Enter") return;
+                e.preventDefault();
+                triggerSaveOrUpdate();
+            });
+        }
+
+        function triggerSaveOrUpdate() {
+            if (editingId !== null) {
+                document.getElementById("updateBtn").click();
+            } else {
+                document.getElementById("saveBtn").click();
+            }
+            // After save/update, focus will go to itemCode (handled in saveEntry/updateEntry)
+        }
+
+        let currentCalculation = {};
+
+        function calculate() {
+            let totalWeight = 0, totalBundles = 0;
+            const palletsData = [];
+            document.querySelectorAll('#palletRows tr').forEach(row => {
+                const weight  = parseFloat(row.querySelector('.weight-input').value) || 0;
+                const bundles = parseFloat(row.querySelector('.bundles-input').value) || 0;
+                totalWeight += weight; totalBundles += bundles;
+                palletsData.push({ weight, bundles });
+            });
+            const palletWt    = parseFloat(document.getElementById('palletWt').value) || 0;
+            const plasticRate = parseFloat(document.getElementById('plasticRate').value) || 0;
+            const grossWt     = totalWeight;
+            const emptyPlastic = plasticRate * totalBundles;
+            const netWt       = grossWt - palletWt - emptyPlastic;
+            const fmt = v => v.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
+            document.getElementById('grossWt').textContent      = fmt(grossWt) + ' KG';
+            document.getElementById('emptyPlastic').textContent = fmt(emptyPlastic) + ' KG';
+            document.getElementById('netWt').textContent        = fmt(netWt) + ' KG';
+            currentCalculation = { grossWt, palletWt, plasticRate, emptyPlastic, netWt, totalBundles, pallets: palletsData };
+            const el = document.getElementById('timestamp');
+            if (el) el.textContent = 'Last updated: ' + new Date().toLocaleString();
+        }
+
+        async function saveEntry() {
+            const itemCode = itemCodeInput.value.trim() || 'N/A';
+            const entry = { timestamp: new Date().toLocaleString(), itemCode, ...currentCalculation };
+            saveBtn.textContent = 'Saving...';
+            try {
+                await fetch(`${API}/api/entries`, { method: 'POST', headers: apiHeaders(), body: JSON.stringify(entry) });
+                itemCodeInput.value = ''; numPalletsInput.value = '0';
+                generateTable(); await loadEntries();
+                itemCodeInput.focus();
+            } catch { alert('Failed to save. Check connection.'); }
+            saveBtn.textContent = 'Save Entry';
+        }
+
+        async function updateEntry() {
+            if (editingId === null) return;
+            const itemCode = itemCodeInput.value.trim() || 'N/A';
+            const entry = { timestamp: new Date().toLocaleString() + ' (Edited)', itemCode, ...currentCalculation };
+            updateBtn.textContent = 'Updating...';
+            try {
+                await fetch(`${API}/api/entries/${editingId}`, { method: 'PUT', headers: apiHeaders(), body: JSON.stringify(entry) });
+                cancelEdit(); await loadEntries();
+                itemCodeInput.focus();
+            } catch { alert('Failed to update. Check connection.'); }
+            updateBtn.textContent = 'Update Entry';
+        }
+
+        async function loadEntries() {
+            try {
+                const res = await fetch(`${API}/api/entries`, { headers: apiHeaders() });
+                if (res.status === 401) { showLogin(); return; }
+                savedEntries = await res.json();
+            } catch { savedEntries = []; }
+            savedEntriesBody.innerHTML = '';
+            if (savedEntries.length === 0) {
+                emptyState.style.display = 'block';
+                document.querySelector('.entries-table-wrap').style.display = 'none';
+            } else {
+                emptyState.style.display = 'none';
+                document.querySelector('.entries-table-wrap').style.display = '';
+                savedEntries.forEach(entry => {
+                    const row = document.createElement('tr');
+                    const itemCode = entry.item_code || entry.itemCode;
+                    const netWt    = entry.net_wt ?? entry.netWt;
+                    row.innerHTML = `
+                        <td><input type="checkbox" class="entry-checkbox" data-id="${entry.id}"></td>
+                        <td style="font-size:11px;color:var(--text-3);">${entry.timestamp}</td>
+                        <td class="item-code">${itemCode}</td>
+                        <td>${entry.pallets.length}</td>
+                        <td class="net-wt">${netWt.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})} KG</td>
+                        <td><button class="btn-edit-sm" onclick="editEntry(${entry.id})">Edit</button></td>`;
+                    savedEntriesBody.appendChild(row);
+                });
+            }
+        }
+
+        function editEntry(id) {
+            const entry = savedEntries.find(e => e.id === id);
+            if (!entry) return;
+            editingId = id;
+            itemCodeInput.value   = entry.item_code || entry.itemCode;
+            numPalletsInput.value = entry.pallets.length;
+            generateTable();
+            const weightInputs  = document.querySelectorAll('.weight-input');
+            const bundlesInputs = document.querySelectorAll('.bundles-input');
+            entry.pallets.forEach((p, i) => {
+                if (weightInputs[i])  weightInputs[i].value  = p.weight  > 0 ? p.weight  : '';
+                if (bundlesInputs[i]) bundlesInputs[i].value = p.bundles > 0 ? p.bundles : '';
+            });
+            document.getElementById('palletWt').value    = entry.pallet_wt ?? entry.palletWt;
+            document.getElementById('plasticRate').value = entry.plastic_rate ?? entry.plasticRate;
+            calculate();
+            saveBtn.style.display = 'none'; updateBtn.style.display = ''; cancelEditBtn.style.display = '';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function cancelEdit() {
+            editingId = null;
+            itemCodeInput.value = ''; numPalletsInput.value = '0';
+            generateTable();
+            saveBtn.style.display = ''; updateBtn.style.display = 'none'; cancelEditBtn.style.display = 'none';
+        }
+
+        async function deleteSelected() {
+            const selectedIds = Array.from(document.querySelectorAll('.entry-checkbox:checked')).map(cb => parseInt(cb.dataset.id));
+            if (selectedIds.length === 0) { alert('Select at least one entry to delete.'); return; }
+            if (!confirm(`Delete ${selectedIds.length} entry/entries?`)) return;
+            try {
+                await fetch(`${API}/api/entries`, { method: 'DELETE', headers: apiHeaders(), body: JSON.stringify({ ids: selectedIds }) });
+                await loadEntries();
+            } catch { alert('Failed to delete. Check connection.'); }
+            selectAllCheckbox.checked = false;
+        }
+
+        function escapeHTML(str) { const p = document.createElement('p'); p.textContent = str; return p.innerHTML; }
+
+        function buildSlip(entry) {
+            const slip = document.createElement('div');
+            slip.className = 'print-slip';
+            const itemCode     = entry.item_code || entry.itemCode;
+            const grossWt      = entry.gross_wt  ?? entry.grossWt;
+            const palletWt     = entry.pallet_wt ?? entry.palletWt;
+            const plasticRate  = entry.plastic_rate ?? entry.plasticRate;
+            const emptyPlastic = entry.empty_plastic ?? entry.emptyPlastic;
+            const netWt        = entry.net_wt    ?? entry.netWt;
+            const hasPlasticRate = plasticRate && plasticRate !== 0;
+            const fmt = v => v.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
+            let palletsHtml = '';
+            entry.pallets.forEach((p, i) => {
+                palletsHtml += `<tr>
+                    <td class="col-pallet">Pallet ${i+1}</td>
+                    <td class="col-weight">${p.weight > 0 ? p.weight.toFixed(2) : ''} <span class="unit-suffix">${p.weight > 0 ? 'KG' : ''}</span></td>
+                    <td class="col-qty">${p.bundles > 0 ? p.bundles : ''} <span class="unit-suffix">${p.bundles > 0 ? 'BDLS' : ''}</span></td>
+                </tr>`;
+            });
+            slip.innerHTML = `
+                <table class="slip-header">
+                    <tr><td class="label-cell">ITEM:</td><td class="value-cell">${escapeHTML(itemCode)}</td></tr>
+                    <tr><td class="label-cell">NO. OF PALLETS:</td><td class="value-cell">${entry.pallets.length}</td></tr>
+                </table>
+                <table class="slip-table">
+                    <thead><tr><th class="col-pallet">PALLET LIST</th><th class="col-weight">WEIGHT</th><th class="col-qty">QTY</th></tr></thead>
+                    <tbody>${palletsHtml}</tbody>
+                    <tbody>
+                        <tr class="row-gross"><td class="summary-label">GROSS WT</td><td class="summary-value" colspan="2">${fmt(grossWt)} KG</td></tr>
+                        <tr class="row-pallet"><td class="summary-label">PALLET WT</td><td class="summary-value" colspan="2">${fmt(palletWt)} KG</td></tr>
+                        <tr class="row-empty"><td class="summary-label">EMPTY PLASTIC</td><td class="summary-value" colspan="2">${hasPlasticRate ? fmt(emptyPlastic) + ' KG' : '&nbsp;'}</td></tr>
+                        <tr class="row-net"><td class="summary-label">NET WT</td><td class="summary-value" colspan="2">${hasPlasticRate ? fmt(netWt) + ' KG' : '&nbsp;'}</td></tr>
+                    </tbody>
+                </table>`;
+            return slip;
+        }
+
+        function buildBlankSlip(numRows) {
+            const slip = document.createElement('div');
+            slip.className = 'print-blank-slip';
+            let palletsHtml = '';
+            for (let j = 1; j <= numRows; j++) {
+                palletsHtml += `<tr><td class="col-pallet">Pallet ${j}</td><td class="col-weight"><span class="unit-suffix">KG</span></td><td class="col-qty"><span class="unit-suffix">BDLS</span></td></tr>`;
+            }
+            slip.innerHTML = `
+                <table class="slip-header">
+                    <tr><td class="label-cell">ITEM:</td><td class="value-cell">&nbsp;</td></tr>
+                    <tr><td class="label-cell">NO. OF PALLETS:</td><td class="value-cell">&nbsp;</td></tr>
+                </table>
+                <table class="slip-table">
+                    <thead><tr><th class="col-pallet">PALLET LIST</th><th class="col-weight">WEIGHT</th><th class="col-qty">QTY</th></tr></thead>
+                    <tbody>${palletsHtml}</tbody>
+                    <tbody>
+                        <tr class="row-gross"><td class="summary-label">GROSS WT</td><td class="summary-value" colspan="2">&nbsp; KG</td></tr>
+                        <tr class="row-pallet"><td class="summary-label">PALLET WT</td><td class="summary-value" colspan="2">&nbsp; KG</td></tr>
+                        <tr class="row-empty"><td class="summary-label">EMPTY PLASTIC</td><td class="summary-value" colspan="2">&nbsp; KG</td></tr>
+                        <tr class="row-net"><td class="summary-label">NET WT</td><td class="summary-value" colspan="2">&nbsp; KG</td></tr>
+                    </tbody>
+                </table>`;
+            return slip;
+        }
+
+        function printSelected() {
+            const selectedIds = Array.from(document.querySelectorAll('.entry-checkbox:checked')).map(cb => parseInt(cb.dataset.id));
+            const toPrint = savedEntries.filter(e => selectedIds.includes(e.id));
+            if (toPrint.length === 0) { alert('Please select at least one entry to print.'); return; }
+            printArea.innerHTML = '';
+            printArea.classList.remove('landscape-mode');
+            let pageStyle = document.getElementById('dynamic-page-style');
+            if (!pageStyle) { pageStyle = document.createElement('style'); pageStyle.id = 'dynamic-page-style'; document.head.appendChild(pageStyle); }
+            pageStyle.textContent = '@page { size: letter portrait; margin: 0.25in; }';
+            toPrint.forEach((entry, i) => {
+                const cell = document.createElement('div');
+                cell.className = 'print-cut-cell';
+                cell.appendChild(buildSlip(entry));
+                printArea.appendChild(cell);
+                if ((i+1) % 3 === 0 || i === toPrint.length - 1) {
+                    const cut = document.createElement('div'); cut.className = 'print-row-cut'; printArea.appendChild(cut);
+                }
+            });
+            window.print();
+        }
+
+        function printBlankForms() {
+            printArea.innerHTML = '';
+            printArea.classList.add('landscape-mode');
+            let pageStyle = document.getElementById('dynamic-page-style');
+            if (!pageStyle) { pageStyle = document.createElement('style'); pageStyle.id = 'dynamic-page-style'; document.head.appendChild(pageStyle); }
+            pageStyle.textContent = '@media print { @page { size: letter landscape; margin: 0.2in; } }';
+            for (let i = 0; i < 8; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'print-cut-cell';
+                cell.appendChild(buildBlankSlip(15));
+                printArea.appendChild(cell);
+                if ((i+1) % 4 === 0 || i === 7) {
+                    const cut = document.createElement('div'); cut.className = 'print-row-cut'; printArea.appendChild(cut);
+                }
+            }
+            window.print();
+        }
+    </script>
+</body>
+</html>

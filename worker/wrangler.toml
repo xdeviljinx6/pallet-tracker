@@ -1,0 +1,8 @@
+name = "pallet-tracker"
+main = "src/worker.js"
+compatibility_date = "2024-01-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "pallet-tracker-db"
+database_id = "964077b3-2697-4512-b14f-f6ddab845629"
