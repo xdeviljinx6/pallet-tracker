@@ -687,7 +687,8 @@
         const printArea         = document.getElementById('printArea');
         const emptyState        = document.getElementById('emptyState');
 
-        numPalletsInput.addEventListener('input', generateTable);
+        numPalletsInput.addEventListener('input', onNumPalletsInput);
+        numPalletsInput.addEventListener('change', onNumPalletsChange);
         saveBtn.addEventListener('click', saveEntry);
         updateBtn.addEventListener('click', updateEntry);
         cancelEditBtn.addEventListener('click', cancelEdit);
@@ -698,8 +699,58 @@
             document.querySelectorAll('.entry-checkbox').forEach(cb => cb.checked = selectAllCheckbox.checked);
         });
 
+        // ── Changing "No. of Pallets" without losing what was already typed ──
+        function requestedPalletCount() {
+            return Math.max(0, parseInt(numPalletsInput.value) || 0);
+        }
+        function currentPalletRows() {
+            return Array.from(document.querySelectorAll('#palletRows tr'));
+        }
+        // 1-based pallet numbers at or beyond `keep` rows that already contain a value
+        function palletsWithDataBeyond(keep) {
+            const rows = currentPalletRows();
+            const firstBundles = rows.length ? rows[0].querySelector('.bundles-input').value.trim() : '';
+            const filled = [];
+            rows.forEach((row, i) => {
+                if (i < keep) return;
+                const weight  = row.querySelector('.weight-input').value.trim();
+                const bundles = row.querySelector('.bundles-input').value.trim();
+                // BDLS copied down from Pallet 1 by the auto-fill is not something the user typed
+                const bundlesIsAutofill = i > 0 && bundles === firstBundles;
+                if (weight !== '' || (bundles !== '' && !bundlesIsAutofill)) filled.push(i + 1);
+            });
+            return filled;
+        }
+        // While typing: growing (or removing only empty rows) is safe, so apply live.
+        // Removing rows that hold data waits for the 'change' event (blur / Enter) and asks first.
+        function onNumPalletsInput() {
+            const requested = requestedPalletCount();
+            if (requested >= currentPalletRows().length || palletsWithDataBeyond(requested).length === 0) {
+                generateTable();
+            }
+        }
+        function onNumPalletsChange() {
+            const requested = requestedPalletCount();
+            const current = currentPalletRows().length;
+            if (requested >= current) {
+                if (requested !== current) generateTable();
+                return;
+            }
+            const filled = palletsWithDataBeyond(requested);
+            if (filled.length === 0) { generateTable(); return; }
+            const list = filled.length === 1 ? `Pallet ${filled[0]} has` : `Pallets ${filled.join(', ')} have`;
+            if (confirm(`${list} data that will be deleted if you reduce to ${requested} pallet${requested === 1 ? '' : 's'}.\n\nContinue?`)) {
+                generateTable();
+            } else {
+                numPalletsInput.value = current;   // put the old count back, data untouched
+            }
+        }
+
         function generateTable() {
             const numPallets = parseInt(numPalletsInput.value) || 0;
+            // keep whatever is already typed so a count change doesn't wipe the table
+            const prevWeights = Array.from(document.querySelectorAll('.weight-input')).map(i => i.value);
+            const prevBundles = Array.from(document.querySelectorAll('.bundles-input')).map(i => i.value);
             if (numPallets <= 0) {
                 tableContainer.innerHTML = '';
                 actionsDiv.style.display = 'none';
@@ -719,6 +770,12 @@
                 rows += `<tr><td>Pallet ${i}</td><td><input type="number" class="tbl-input weight-input" step="0.01" placeholder="0.00"></td><td><input type="number" class="tbl-input bundles-input" step="1" placeholder="0"></td></tr>`;
             }
             tableContainer.innerHTML = `<div class="pallet-table-wrap" style="margin-top:16px;"><table class="pallet-table"><thead><tr><th>Pallet #</th><th>Weight (KG)</th><th>Bundles (BDLS)</th></tr></thead><tbody id="palletRows">${rows}</tbody></table></div>`;
+            const newWeights = document.querySelectorAll('.weight-input');
+            const newBundles = document.querySelectorAll('.bundles-input');
+            for (let i = 0; i < Math.min(prevWeights.length, newWeights.length); i++) {
+                newWeights[i].value = prevWeights[i];
+                newBundles[i].value = prevBundles[i];
+            }
             addEventListeners();
             calculate();
         }
@@ -728,8 +785,17 @@
             const allBundles = document.querySelectorAll(".bundles-input");
 
             document.querySelectorAll(".weight-input, .bundles-input").forEach(input => input.addEventListener("input", calculate));
-            document.getElementById("palletWt").addEventListener("input", calculate);
-            document.getElementById("plasticRate").addEventListener("input", calculate);
+            // palletWt / plasticRate are static elements: bind their listeners only once
+            const palletWtStatic = document.getElementById("palletWt");
+            const plasticRateStatic = document.getElementById("plasticRate");
+            if (!palletWtStatic.dataset.bound) {
+                palletWtStatic.dataset.bound = "1";
+                palletWtStatic.addEventListener("input", calculate);
+            }
+            if (!plasticRateStatic.dataset.bound) {
+                plasticRateStatic.dataset.bound = "1";
+                plasticRateStatic.addEventListener("input", calculate);
+            }
 
             // Auto-fill BDLS: when Pallet 1 BDLS changes, apply same value to all except last pallet
             if (allBundles.length > 1) {
@@ -744,6 +810,8 @@
 
             // Disable Tab default on all pallet/summary inputs — Tab behaves like Enter
             document.querySelectorAll(".weight-input, .bundles-input, .s-input").forEach(input => {
+                if (input.dataset.tabBound) return;
+                input.dataset.tabBound = "1";
                 input.addEventListener("keydown", function (e) {
                     if (e.key === "Tab") {
                         e.preventDefault();
@@ -800,7 +868,9 @@
             });
 
             // Enter key on pallet wt — if has value, move to plastic rate or save
-            document.getElementById("palletWt").addEventListener("keydown", function (e) {
+            if (!palletWtStatic.dataset.enterBound) {
+              palletWtStatic.dataset.enterBound = "1";
+              palletWtStatic.addEventListener("keydown", function (e) {
                 if (e.key !== "Enter") return;
                 e.preventDefault();
                 const plasticRateEl = document.getElementById("plasticRate");
@@ -810,14 +880,18 @@
                 } else {
                     triggerSaveOrUpdate();
                 }
-            });
+              });
+            }
 
             // Enter key on plastic rate — save or update
-            document.getElementById("plasticRate").addEventListener("keydown", function (e) {
+            if (!plasticRateStatic.dataset.enterBound) {
+              plasticRateStatic.dataset.enterBound = "1";
+              plasticRateStatic.addEventListener("keydown", function (e) {
                 if (e.key !== "Enter") return;
                 e.preventDefault();
                 triggerSaveOrUpdate();
-            });
+              });
+            }
         }
 
         function triggerSaveOrUpdate() {
@@ -854,7 +928,10 @@
             if (el) el.textContent = 'Last updated: ' + new Date().toLocaleString();
         }
 
+        let isSaving = false;
         async function saveEntry() {
+            if (isSaving) return;
+            isSaving = true;
             const itemCode = itemCodeInput.value.trim() || 'N/A';
             const entry = { timestamp: new Date().toLocaleString(), itemCode, ...currentCalculation };
             saveBtn.textContent = 'Saving...';
@@ -865,10 +942,13 @@
                 itemCodeInput.focus();
             } catch { alert('Failed to save. Check connection.'); }
             saveBtn.textContent = 'Save Entry';
+            isSaving = false;
         }
 
+        let isUpdating = false;
         async function updateEntry() {
-            if (editingId === null) return;
+            if (editingId === null || isUpdating) return;
+            isUpdating = true;
             const itemCode = itemCodeInput.value.trim() || 'N/A';
             const entry = { timestamp: new Date().toLocaleString() + ' (Edited)', itemCode, ...currentCalculation };
             updateBtn.textContent = 'Updating...';
@@ -878,6 +958,7 @@
                 itemCodeInput.focus();
             } catch { alert('Failed to update. Check connection.'); }
             updateBtn.textContent = 'Update Entry';
+            isUpdating = false;
         }
 
         async function loadEntries() {
